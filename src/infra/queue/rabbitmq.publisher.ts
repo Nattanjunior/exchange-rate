@@ -14,6 +14,7 @@ export class RabbitmqPublisher implements ExchangeEventPublisher {
       exchange,
       routingKey,
       Buffer.from(JSON.stringify({ currency })),
+      { persistent: true },
     );
   }
 }
