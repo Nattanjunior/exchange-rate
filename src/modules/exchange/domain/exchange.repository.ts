@@ -1,6 +1,4 @@
 export interface ExchangeRepository {
-  FindtheLatestExchangeRate(): Promise<{}>;
-  SearchCurrencyHistory(): Promise<[]>;
-  save(): void;
-  delete(): void;
+  FindtheLatestExchangeRate(currency: string): Promise<{}>;
+  SearchCurrencyHistory(currency: string, date: string): Promise<{}>;
 }
