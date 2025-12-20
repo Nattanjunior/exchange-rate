@@ -1,4 +1,3 @@
-import { response } from 'express';
 import type { ExchangeRepository } from 'src/modules/exchange/domain/exchange.repository';
 
 export class ExchangeApiClient implements ExchangeRepository {
