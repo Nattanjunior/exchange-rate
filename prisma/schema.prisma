@@ -12,3 +12,13 @@ generator client {
 datasource db {
   provider = "postgresql"
 }
+
+model ExchangeRate {
+  id        Int      @id @default(autoincrement())
+  currency  String
+  rate      Decimal  @db.Decimal(10, 6)
+  quotedAt  DateTime
+  createdAt DateTime @default(now())
+
+  @@index([currency, quotedAt])
+}
