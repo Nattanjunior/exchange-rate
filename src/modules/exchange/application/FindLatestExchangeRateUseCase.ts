@@ -1,28 +1,21 @@
 import { Injectable } from '@nestjs/common';
-import type { ExchangeRepository } from '../domain/exchange.repository';
 import { RedisService } from 'src/infra/cache/redis.service';
 import type { ExchangeEventPublisher } from '../domain/exchange-event.repository';
+import type { PrismaExchangeRepository } from '../domain/prisma-repository';
 
 @Injectable()
 export class FindLatestExchangeRateUseCase {
-  private readonly exchangeRepository: ExchangeRepository;
-  private readonly redisService: RedisService;
-  private readonly exchangeEventPublisher: ExchangeEventPublisher;
-
   constructor(
-    exchangeRepository: ExchangeRepository,
-    redisService: RedisService,
-    exchangeEventPublisher: ExchangeEventPublisher,
-  ) {
-    this.exchangeRepository = exchangeRepository;
-    this.redisService = redisService;
-    this.exchangeEventPublisher = exchangeEventPublisher;
-  }
+    private readonly redisService: RedisService,
+    private readonly exchangeEventPublisher: ExchangeEventPublisher,
+    private readonly repository: PrismaExchangeRepository,
+  ) {}
 
-  async findTheLatestExchangeRate(currency: string): Promise<{}> {
-    const cache = this.redisService;
-    const cacheData = await cache.redis().get(`exchange:${currency}`);
+  async execute(currency: string) {
+    const redis = this.redisService.redis();
+    const cacheKey = `exchange:${currency}`;
 
+    const cacheData = await redis.get(cacheKey);
     if (cacheData) {
       return {
         status: 'SUCCESS',
@@ -32,8 +25,17 @@ export class FindLatestExchangeRateUseCase {
 
     await this.exchangeEventPublisher.publish(currency);
 
+    const latest = await this.repository.findLatest(currency);
+    if (latest) {
+      return {
+        status: 'SUCCESS',
+        data: latest,
+      };
+    }
+
     return {
       status: 'PROCESSING',
     };
   }
 }
+
