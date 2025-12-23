@@ -1,3 +1,5 @@
+import { DomainEvent } from '../../../types/DomainEvent';
+
 export interface ExchangeEventPublisher {
-  publish(currency: string): Promise<void>;
+  publish(DomainEvent): Promise<void>;
 }
