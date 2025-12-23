@@ -24,6 +24,7 @@
     "@nestjs/config": "^4.0.2",
     "@nestjs/core": "^11.0.1",
     "@nestjs/platform-express": "^11.0.1",
+    "@prisma/client": "^7.2.0",
     "amqp-connection-manager": "^5.0.0",
     "amqplib": "^0.10.9",
     "ioredis": "^5.8.2",
