@@ -2,22 +2,15 @@ import { Injectable } from '@nestjs/common';
 import { RedisService } from 'src/infra/cache/redis.service';
 import type { ExchangeEventPublisher } from '../domain/exchange-event.repository';
 import type { PrismaExchangeRepository } from '../domain/prisma-repository';
+import type { DomainEvent } from 'src/types/DomainEvent';
 
 @Injectable()
 export class searchCurrencyHistory {
-  private readonly repository: PrismaExchangeRepository;
-  private readonly redisService: RedisService;
-  private readonly exchangeEventPublisher: ExchangeEventPublisher;
-
   constructor(
-    repository: PrismaExchangeRepository,
-    redisService: RedisService,
-    exchangeEventPublisher: ExchangeEventPublisher,
-  ) {
-    this.repository = repository;
-    this.redisService = redisService;
-    this.exchangeEventPublisher = exchangeEventPublisher;
-  }
+    private readonly repository: PrismaExchangeRepository,
+    private readonly redisService: RedisService,
+    private readonly exchangeEventPublisher: ExchangeEventPublisher,
+  ) {}
 
   async execute(currency: string, date: string): Promise<{}> {
     const redis = this.redisService.redis();
@@ -31,7 +24,10 @@ export class searchCurrencyHistory {
       };
     }
 
-    await this.exchangeEventPublisher.publish(`${currency}:${date}`);
+    await this.exchangeEventPublisher.publish({
+      type: 'SEARCH_CURRENCY_HISTORY',
+      payload: { currency: currency, date: date },
+    } as DomainEvent);
 
     const latest = await this.repository.findLatest(currency);
     if (latest) {

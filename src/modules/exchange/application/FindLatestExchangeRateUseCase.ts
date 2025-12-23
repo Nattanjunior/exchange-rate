@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { RedisService } from 'src/infra/cache/redis.service';
 import type { ExchangeEventPublisher } from '../domain/exchange-event.repository';
 import type { PrismaExchangeRepository } from '../domain/prisma-repository';
+import type { DomainEvent } from 'src/types/DomainEvent';
 
 @Injectable()
 export class FindLatestExchangeRateUseCase {
@@ -23,7 +24,10 @@ export class FindLatestExchangeRateUseCase {
       };
     }
 
-    await this.exchangeEventPublisher.publish(currency);
+    await this.exchangeEventPublisher.publish({
+      type: 'FIND_LATEST_EXCHANGE_RATE',
+      payload: { currency: currency },
+    } as DomainEvent);
 
     const latest = await this.repository.findLatest(currency);
     if (latest) {
@@ -38,4 +42,3 @@ export class FindLatestExchangeRateUseCase {
     };
   }
 }
-
