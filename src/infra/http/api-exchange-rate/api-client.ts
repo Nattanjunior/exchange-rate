@@ -1,6 +1,6 @@
-import type { ExchangeRepository } from 'src/modules/exchange/domain/exchange.repository';
+import type { ExchangeRateApiRepository } from 'src/modules/exchange/domain/ExchangerateAPI.repository';
 
-export class ExchangeApiClient implements ExchangeRepository {
+export class ExchangeApiClient implements ExchangeRateApiRepository {
   private options = {
     method: 'GET',
     headers: { Accept: 'application/json' },
