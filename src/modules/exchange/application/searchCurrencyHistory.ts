@@ -21,7 +21,7 @@ export class searchCurrencyHistory {
 
   async execute(currency: string, date: string): Promise<{}> {
     const redis = this.redisService.redis();
-    const cacheKey = `exchange:${currency}`;
+    const cacheKey = `exchange:${currency}:${date}`;
 
     const cacheData = await redis.get(cacheKey);
     if (cacheData) {
