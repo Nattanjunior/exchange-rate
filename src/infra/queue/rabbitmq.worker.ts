@@ -1,6 +1,13 @@
+import { FindLatestExchangeRateUseCase } from 'src/modules/exchange/application/FindLatestExchangeRateUseCase';
 import { RabbitMQConnection } from './rabbitmq.connection';
+import { searchCurrencyHistory } from 'src/modules/exchange/application/searchCurrencyHistory';
 
 export class ExchangeWorker {
+  constructor(
+    private readonly findLatestExchangeRateUseCase: FindLatestExchangeRateUseCase,
+    private readonly searchCurrencyHistory: searchCurrencyHistory,
+  ) {}
+
   async start() {
     const channel = await RabbitMQConnection.getChannel();
 
@@ -17,11 +24,23 @@ export class ExchangeWorker {
       if (!msg) return;
 
       const data = JSON.parse(msg.content.toString());
-      console.log('Processando:', data.currency);
 
-      // 🔥 chama API externa
-      // 🔥 salva histórico
-      // 🔥 atualiza cache
+      switch (data.type) {
+        case 'FIND_LATEST_EXCHANGE_RATE':
+          await this.findLatestExchangeRateUseCase.execute(
+            data.payload.currency,
+          );
+          break;
+
+        case 'SEARCH_CURRENCY_HISTORY':
+          await this.searchCurrencyHistory.execute(
+            data.payload.currency,
+            data.payload.date,
+          );
+          break;
+        default:
+          throw new Error('Unknown event type');
+      }
 
       channel.ack(msg);
     });
