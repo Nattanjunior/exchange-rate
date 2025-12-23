@@ -1,7 +1,7 @@
 type ExchangeProps = {
   id?: string;
   currency: string;
-  rate: number;
+  rates: { currency: string }[];
   quotedAt: Date;
   createdAt?: Date;
 };
