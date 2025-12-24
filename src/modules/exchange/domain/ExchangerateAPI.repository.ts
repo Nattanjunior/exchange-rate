@@ -1,9 +1,6 @@
-import type { TypeResponseApi } from 'src/types/TypeResponseApi';
+import type { ExchangeApiResponse } from 'src/types/responseAPI';
 
 export interface ExchangeRateApiRepository {
-  FindtheLatestExchangeRate(currency: string): Promise<TypeResponseApi>;
-  SearchCurrencyHistory(
-    currency: string,
-    date: string,
-  ): Promise<TypeResponseApi>;
+  FindtheLatestExchangeRate(currency: string);
+  SearchCurrencyHistory(currency: string, date: string);
 }
