@@ -23,7 +23,7 @@ export class UpdateCurrencyHistoryUseCase {
     const quotedAt = new Date(data.timestamp * 1000);
     await this.repositoryPrisma.save({
       currency,
-      rates: rate,
+      rate,
       quotedAt,
     });
 
