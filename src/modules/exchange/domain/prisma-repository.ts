@@ -1,14 +1,8 @@
-type ExchangeProps = {
-  id?: string;
-  currency: string;
-  rates: { currency: string }[];
-  quotedAt: Date;
-  createdAt?: Date;
-};
+import type { ExchangeEntity } from 'src/types/responseBD';
 
 export interface PrismaExchangeRepository {
-  findLatest(currency: string): Promise<ExchangeProps>;
-  findHistory(currency: string): Promise<ExchangeProps[]>;
-  save(props: ExchangeProps): Promise<void>;
-  delete(id: string): Promise<void>;
+  findLatest(currency: string): Promise<ExchangeEntity>;
+  findHistory(currency: string): Promise<ExchangeEntity[]>;
+  save(props: ExchangeEntity): Promise<void>;
+  delete(id: number): Promise<void>;
 }

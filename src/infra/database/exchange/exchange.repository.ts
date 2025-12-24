@@ -1,29 +1,45 @@
 import type { PrismaExchangeRepository } from 'src/modules/exchange/domain/prisma-repository';
+import type { PrismaService } from '../prisma/prisma.service';
+import type { ExchangeEntity } from 'src/types/responseBD';
+import type { ExchangeCreateInput } from '../../../types/ExchangeCreateInput';
 
-export class PrismaService implements PrismaExchangeRepository {
-  findLatest(
-    currency: string,
-  ): Promise<{
-    id: string;
-    currency: string;
-    rate: number;
-    quotedAt: Date;
-    createdAt: Date;
-  }> {
-    throw new Error('Method not implemented.');
-  }
-  findHistory(
-    currency: string,
-  ): Promise<{
-    id: string;
-    currency: string;
-    rate: number;
-    quotedAt: Date;
-    createdAt: Date;
-  }> {
-    throw new Error('Method not implemented.');
-  }
-  save(): void {}
+import { mapEntityToDb } from './mapEntityToDb';
+import { mapDbToEntity } from './mapDbToEntity';
 
-  delete(): void {}
+export class ExchangeDB implements PrismaExchangeRepository {
+  constructor(private readonly prisma: PrismaService) {}
+
+  async findLatest(currency: string): Promise<ExchangeEntity> {
+    const data = await this.prisma.exchangeRate.findFirst({
+      where: { currency },
+      orderBy: { quotedAt: 'desc' },
+    });
+
+    if (!data) {
+      throw new Error('Exchange rate not found');
+    }
+
+    return mapDbToEntity(data);
+  }
+
+  async findHistory(currency: string): Promise<ExchangeEntity[]> {
+    const data = await this.prisma.exchangeRate.findMany({
+      where: { currency },
+      orderBy: { quotedAt: 'desc' },
+    });
+
+    return data.map(mapDbToEntity);
+  }
+
+  async save(props: ExchangeCreateInput): Promise<void> {
+    await this.prisma.exchangeRate.create({
+      data: mapEntityToDb(props),
+    });
+  }
+
+  async delete(id: number): Promise<void> {
+    await this.prisma.exchangeRate.delete({
+      where: { id },
+    });
+  }
 }
