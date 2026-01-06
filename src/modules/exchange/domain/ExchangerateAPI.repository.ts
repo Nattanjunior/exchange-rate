@@ -1,6 +1,6 @@
-import type { ExchangeApiResponse } from 'src/types/responseAPI';
+export const EXCHANGE_API_REPOSITORY = 'EXCHANGE_API_REPOSITORY';
 
 export interface ExchangeRateApiRepository {
-  FindtheLatestExchangeRate(currency: string);
-  SearchCurrencyHistory(currency: string, date: string);
+  FindtheLatestExchangeRate(currency: string): Promise<any>;
+  SearchCurrencyHistory(currency: string, date: string): Promise<any>;
 }
