@@ -8,6 +8,3 @@ CREATE TABLE "ExchangeRate" (
 
     CONSTRAINT "ExchangeRate_pkey" PRIMARY KEY ("id")
 );
-
--- CreateIndex
-CREATE INDEX "ExchangeRate_currency_quotedAt_idx" ON "ExchangeRate"("currency", "quotedAt");

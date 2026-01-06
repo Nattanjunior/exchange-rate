@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "ExchangeRate" ALTER COLUMN "rate" SET DATA TYPE DECIMAL(20,10);
