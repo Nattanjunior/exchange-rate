@@ -1,22 +1,22 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { RedisService } from 'src/infra/cache/redis.service';
-import type { ExchangeEventPublisher } from '../domain/exchange-event.repository';
-import type { PrismaExchangeRepository } from '../domain/prisma-repository';
+import { EXCHANGE_EVENT_PUBLISHER, type ExchangeEventPublisher } from '../domain/exchange-event.repository';
+import { PRISMA_EXCHANGE_REPOSITORY, type PrismaExchangeRepository } from '../domain/prisma-repository';
 import type { DomainEvent } from 'src/types/DomainEvent';
 
 @Injectable()
-export class FindLatestExchangeRateUseCase {
+export class searchCurrencyHistoryUseCase {
   constructor(
-    private readonly redisService: RedisService,
-    @Inject('EXCHANGE_EVENT_PUBLISHER')
-    private readonly exchangeEventPublisher: ExchangeEventPublisher,
-    @Inject('PRISMA_EXCHANGE_REPOSITORY')
+    @Inject(PRISMA_EXCHANGE_REPOSITORY)
     private readonly repository: PrismaExchangeRepository,
+    @Inject(EXCHANGE_EVENT_PUBLISHER)
+    private readonly exchangeEventPublisher: ExchangeEventPublisher,
+    private readonly redisService: RedisService,
   ) {}
 
-  async execute(currency: string) {
+  async execute(currency: string, date: string): Promise<{}> {
     const redis = this.redisService.redis();
-    const cacheKey = `exchange:${currency}`;
+    const cacheKey = `exchange:${currency}:${date}`;
 
     const cacheData = await redis.get(cacheKey);
     if (cacheData) {
@@ -27,8 +27,8 @@ export class FindLatestExchangeRateUseCase {
     }
 
     await this.exchangeEventPublisher.publish({
-      type: 'FIND_LATEST_EXCHANGE_RATE',
-      payload: { currency: currency },
+      type: 'SEARCH_CURRENCY_HISTORY',
+      payload: { currency: currency, date: date },
     } as DomainEvent);
 
     const latest = await this.repository.findLatest(currency);
