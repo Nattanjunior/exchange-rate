@@ -1,22 +1,24 @@
 import type { PrismaExchangeRepository } from 'src/modules/exchange/domain/prisma-repository';
-import type { PrismaService } from '../prisma/prisma.service';
+import { PrismaService } from '../prisma/prisma.service';
 import type { ExchangeEntity } from 'src/types/responseBD';
 import type { ExchangeCreateInput } from '../../../types/ExchangeCreateInput';
 
 import { mapEntityToDb } from './mapEntityToDb';
 import { mapDbToEntity } from './mapDbToEntity';
+import { Injectable } from '@nestjs/common';
 
+@Injectable()
 export class ExchangeDB implements PrismaExchangeRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  async findLatest(currency: string): Promise<ExchangeEntity> {
+  async findLatest(currency: string): Promise<ExchangeEntity | null> {
     const data = await this.prisma.exchangeRate.findFirst({
       where: { currency },
       orderBy: { quotedAt: 'desc' },
     });
 
     if (!data) {
-      throw new Error('Exchange rate not found');
+      return null;
     }
 
     return mapDbToEntity(data);
