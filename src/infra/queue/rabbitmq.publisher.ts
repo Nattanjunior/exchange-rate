@@ -1,9 +1,13 @@
 import type { ExchangeEventPublisher } from 'src/modules/exchange/domain/exchange-event.repository';
 import { RabbitMQConnection } from './rabbitmq.connection';
+import { Injectable } from '@nestjs/common';
 
+@Injectable()
 export class RabbitmqPublisher implements ExchangeEventPublisher {
-  async publish(currency: string) {
-    const channel = await RabbitMQConnection.getChannel();
+  constructor(private readonly rabbit: RabbitMQConnection) {}
+
+  async publish(event: any) {
+    const channel = await this.rabbit.getChannel();
 
     const exchange = 'exchange.request';
     const routingKey = 'exchange.currency';
@@ -13,7 +17,7 @@ export class RabbitmqPublisher implements ExchangeEventPublisher {
     channel.publish(
       exchange,
       routingKey,
-      Buffer.from(JSON.stringify({ currency })),
+      Buffer.from(JSON.stringify(event)),
       { persistent: true },
     );
   }
