@@ -84,7 +84,6 @@ export class FetchExchangeRateUseCase {
       });
 
       await Promise.all(promises);
-      console.log(`Updated history rates for ${Object.keys(data.rates).length} currencies on ${date}`);
 
     } catch (error) {
       console.error('Error in fetchHistory', error);

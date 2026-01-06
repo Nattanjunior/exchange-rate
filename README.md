@@ -1,98 +1,76 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# Exchange Rate API
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+API para consultar e armazenar taxas de câmbio, com processamento assíncrono via fila, cache em Redis e persistência em PostgreSQL usando Prisma. Projetada com separação clara entre camadas de domínio, aplicação e infraestrutura.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+## O que foi feito
 
-## Description
+- Integração com API de taxas de câmbio Open Exchange Rates para obter taxas mais recentes e históricas.
+- Criação do caso de uso para busca e processamento: salva todas as moedas retornadas e também a moeda base com taxa 1.0.
+- Processamento assíncrono de eventos via RabbitMQ (publicação/consumo).
+- Cache de resultados em Redis para acelerar respostas subsequentes.
+- Ajuste de precisão no campo `rate` para evitar overflow numérico (Decimal(20,10)).
+- Correções de DI e inicialização de componentes (Prisma, Worker de fila).
+- Endpoint passa de `PROCESSING` para `SUCCESS` quando os dados são processados e disponíveis.
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+## Tecnologias
 
-## Project setup
+- Node.js, TypeScript, NestJS.
+- PostgreSQL + Prisma ORM.
+- Redis (ioredis) para cache.
+- RabbitMQ (amqp-connection-manager / amqplib) para filas.
+- Docker para infraestrutura local (Postgres, Redis, RabbitMQ).
 
-```bash
-$ npm install
+## Arquitetura
+
+- Domain: contratos e tokens de repositórios/eventos.
+- Application: casos de uso orquestram cache, filas e persistência.
+- Infra: implementações concretas (DB, HTTP client, Cache, Queue).
+- Event-driven: requisições publicam eventos; workers consomem e processam.
+- Cache-first: tenta Redis, senão publica evento e consulta BD em seguida.
+
+Estrutura de fluxo:
+1. `GET /exchange/:currency` verifica cache. Se não houver, publica evento e retorna `PROCESSING`.
+2. Worker consome o evento, busca taxas na API, salva todas as moedas e a moeda base, popula Redis.
+3. Próxima chamada retorna `SUCCESS` com dados.
+
+## Endpoints
+
+- `GET /exchange/:currency` — última taxa para a moeda solicitada.
+- `GET /exchange/history/:currency/:date` — taxa histórica (YYYY-MM-DD).
+
+## Variáveis de ambiente
+
+Exemplo de `.env`:
+```
+DATABASE_URL=postgresql://postgres:postgres@localhost:5432/exchange_db
+REDIS_HOST=localhost
+REDIS_PORT=6379
+RABBITMQ_URL=amqp://myuser:mypassword@localhost:5673
 ```
 
-## Compile and run the project
+## Execução
 
+Infraestrutura:
 ```bash
-# development
-$ npm run start
-
-# watch mode
-$ npm run start:dev
-
-# production mode
-$ npm run start:prod
+docker compose up -d
 ```
 
-## Run tests
-
+Aplicação:
 ```bash
-# unit tests
-$ npm run test
-
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
+npm install
+npx prisma migrate dev
+npm run start
 ```
 
-## Deployment
+## Princípios e boas práticas
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+- Separação de camadas (Domain/Application/Infra) e DI via tokens.
+- SOLID (responsabilidade única nos casos de uso e repositórios).
+- Resiliência: processamento assíncrono, cache e reprocessamento simples.
+- Observabilidade mínima via logs.
 
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+## Notas sobre a API externa
 
-```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
-```
-
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
-
-## Resources
-
-Check out a few resources that may come in handy when working with NestJS:
-
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
-
-## Support
-
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
-
-## Stay in touch
-
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
-
-## License
-
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+- Open Exchange Rates retorna todas as taxas relativas à moeda base informada (`from=USD`, por exemplo).
+- O sistema salva todas as moedas retornadas e também persiste a moeda base com `rate = 1.0`.
+- Isso evita que a consulta da moeda base fique em `PROCESSING` indefinidamente.
